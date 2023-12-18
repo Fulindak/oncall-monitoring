@@ -1,0 +1,93 @@
+groups:
+- name: alert.rules
+  rules:
+  - alert: InstanceDown
+    expr: up == 0
+    for: 0s
+    labels:
+      severity: warning
+    annotations:
+      summary: Endpoint {{ $labels.instance }} не функционирует
+      description: "{{ $labels.instance }} of job {{ $labels.job }} не активаен более 1 минуты."
+
+  - alert: InstanceUp
+    expr: up != 0
+    for: 0s
+    labels:
+      severity: critical
+    annotations:
+      summary: Endpoint {{ $labels.instance }} не функционирует
+      description: "{{ $labels.instance }} of job {{ $labels.job }} не активаен более 1 минуты."
+
+
+  - alert: WarningFreeDiskSpace
+    expr:
+        group((100 - ((node_filesystem_avail_bytes{job="node"} * 100) / node_filesystem_size_bytes{job="node"})) >= 80) by (instance, device)
+    for: 10s
+    labels:
+      severity: warning
+    annotations:
+      title:  Заканчивается место на диске
+      description: На {{ $labels.instance }} заканчивается место на диске {{ $labels.device }}.
+      grafana:
+
+  - alert: CriticalFreeDiskSpace
+    expr: group((100 - ((node_filesystem_avail_bytes{job="node"} * 100) / node_filesystem_size_bytes{job="node"})) >= 95) by (instance, device)
+    for: 5m
+    labels:
+      severity: critical
+    annotations:
+      title:  Заканчивается место на диске
+      description: На {{ $labels.instance }} заканчивается место на диске {{ $labels.device }}.
+      grafana:
+
+  - alert: WarningOutOfMemory
+    expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 15
+    for: 5m
+    labels:
+      severity: warning
+    annotations:
+      title: Не хватает памяти на хосте
+      description: На {{ $labels.instance }} проблемы с памятью, свободно {{ $value }}%.
+      grafana:
+
+  - alert: CriticalOutOfMemory
+    expr: node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes * 100 < 5
+    for: 2m
+    labels:
+      severity: critical
+    annotations:
+      title: Не хватает памяти на хосте
+      description: На {{ $labels.instance }} проблемы с памятью, свободно {{ $value }}%.
+      grafana:
+
+  - alert: HostHighCpuLoad
+    expr: 100 - (avg by(instance) (rate(node_cpu_seconds_total{mode="idle"}[2m])) * 100) > 85
+    for: 0m
+    labels:
+      severity: warning
+    annotations:
+      title: Загруженность cpu
+      description:  На {{ $labels.instance }}  сейчас {{ $value }}% загруженность cpu.
+
+
+#  - alert: MysqlTooManyConnections(>80%)
+#    expr: max_over_time(mysql_global_status_threads_connected[1m]) / mysql_global_variables_max_connections * 100 > 80
+#    for: 2m
+#    labels:
+#      severity: warning
+#    annotations:
+#      summary: MySQL процент занятых подключений превышает 80% (instance {{ $labels.instance }})
+#      description: "Более 80% MySQL подключений уже используются на {{ $labels.instance }}\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+#
+#  - alert: MysqlRestarted
+#    expr: mysql_global_status_uptime < 60
+#    for: 0m
+#    labels:
+#      severity: info
+#    annotations:
+#      summary: MySQL перезапущен (instance {{ $labels.instance }})
+#      description: "MySQL был перезапущен менее 60 секунд назад: {{ $labels.instance }}.\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+#
+
+

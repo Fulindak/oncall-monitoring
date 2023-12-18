@@ -1,0 +1,49 @@
+global:
+  resolve_timeout: 5m
+  telegram_api_url: "https://api.telegram.org"
+
+templates:
+  - "./tmpl/*.tmpl"
+
+receivers:
+  - name: "null"
+  - name: telegrambot
+    telegram_configs:
+      - chat_id: ssd
+        bot_token: "ss"
+        api_url: "https://api.telegram.org"
+        parse_mode: HTML
+        send_resolved: true
+        message: '{{template "telegram.message.text" . }}'
+
+time_intervals:
+  - name: workdays
+    time_intervals:
+    - weekdays: ['monday:friday']
+  - name: workhours
+    time_intervals:
+      - times:
+        - start_time: 08:00
+          end_time: 23:00
+        location: 'Europe/Paris'
+
+route:
+  group_by: ['instance']
+  group_wait: 1s
+  group_interval: 2s
+  repeat_interval: 1m
+  receiver: "null"
+  routes:
+  - receiver: telegrambot
+    #group_wait: 1s
+    matchers:
+    - severity="critical"
+    group_by: ['severity', 'instance']
+  - receiver: telegrambot
+    #group_wait: 1s
+    matchers:
+    - severity="warning"
+    active_time_intervals:
+    - workdays
+    - workhours
+    group_by: ['severity', 'instance']

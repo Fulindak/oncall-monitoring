@@ -1,0 +1,62 @@
+version: '3.2'
+
+services:
+  elasticsearch:
+    container_name: elasticsearch
+    build:
+      context: ./elasticsearch
+    volumes:
+      - type: volume
+        source: elasticsearch
+        target: /usr/share/elasticsearch/data
+    ports:
+      - "9200:9200"
+      - "9300:9300"
+    environment:
+      ES_JAVA_OPTS: "-Xmx256m -Xms256m"
+      ELASTIC_PASSWORD: yourstrongpasswordhere
+      discovery.type: single-node
+    networks:
+      - monitoring
+
+  logstash:
+    container_name: logstash
+    build:
+      context: ./logstash
+    ports:
+      - "5000:5000"
+      - "9600:9600"
+    environment:
+      LS_JAVA_OPTS: "-Xmx256m -Xms256m"
+    networks:
+      - monitoring
+    depends_on:
+      - elasticsearch
+
+  kibana:
+    container_name: kibana
+    build:
+      context: ./kibana
+    ports:
+      - "5601:5601"
+    networks:
+      - monitoring
+    depends_on:
+      - elasticsearch
+
+  filebeat:
+    container_name: filebeat
+    build:
+      context: ./filebeat
+    volumes:
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - monitoring
+    depends_on:
+      - logstash
+
+
+
+volumes:
+ elasticsearch:

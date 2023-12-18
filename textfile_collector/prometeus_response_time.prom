@@ -1,0 +1,3 @@
+# HELP prometheus_http_metrics_response_time time that the metrics server is response.
+# TYPE prometheus_http_metrics_response_time gauge
+prometheus_http_metrics_response_time{handler="/metrics"} 0.012002

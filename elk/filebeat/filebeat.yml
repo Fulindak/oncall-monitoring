@@ -1,0 +1,65 @@
+#Работает через id
+#filebeat.inputs:
+#  - type: docker
+#    containers.ids:
+#      - "d6d163882df621d41b9b3b8a43b412d87cd6559e2ed46baa60ab1c5a32c1da99"
+#      - "393bd9a704f15b455fbcbcf81a35684be14232a868513688774314c71c2735df"
+#    processors:
+#      - decode_json_fields:
+#          fields: ["message"]
+#          target: ""
+#          overwrite_keys: true
+#      - add_docker_metadata: ~
+#
+#output.logstash:
+#  hosts: ["logstash:5044"]
+
+
+filebeat.config.modules:
+  path: ${path.config}/modules.d/*.yml
+  reload.enabled: false
+
+filebeat.config:
+  inputs:
+    enabled: true
+    path: ${path.config}/filebeat.yml
+    reload.enabled: true
+    reload.period: 10s
+
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      templates:
+        - condition:
+            equals:
+              docker.container.image: "oncall-oncall-web:latest"
+          config:
+            - type: container
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+              processors:
+                - decode_json_fields:
+                    fields: ["message"]
+                    target: ""
+                    overwrite_keys: true
+                - add_docker_metadata:
+                    host: "unix:///var/run/docker.sock"
+                    labels.dedot: true
+        - condition:
+            equals:
+              docker.container.image: "mysql:8.0"
+          config:
+            - type: container
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+              processors:
+                - decode_json_fields:
+                    fields: ["message"]
+                    target: ""
+                    overwrite_keys: true
+                - add_docker_metadata:
+                    host: "unix:///var/run/docker.sock"
+                    labels.dedot: true
+
+output.logstash:
+  hosts: ["logstash:5044"]
